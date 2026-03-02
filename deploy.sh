@@ -61,6 +61,12 @@ kubectl apply -f ingress-nginx.yaml
 rm ingress-nginx.yaml
 kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"type": "LoadBalancer"}}' --type=merge || true
 
+echo "⏳ Ждем готовности Nginx Ingress Controller..."
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
+
 curl -Lo cert-manager.yaml https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
 sed -i 's/registry.k8s.io/k8s.dockerproxy.com/g' cert-manager.yaml
 kubectl apply -f cert-manager.yaml
