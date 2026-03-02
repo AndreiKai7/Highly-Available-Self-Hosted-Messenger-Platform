@@ -22,13 +22,18 @@ sed -i "s|your-email@example.com|$EMAIL|g" manifests/06-issuer.yaml
 # 3. Генерация пароля (20 символов)
 DB_PASS=$(openssl rand -base64 18 | head -c 20)
 
+# 3.5. КОДИРОВАНИЕ пароля для URL (чтобы символы / + @ не ломали connection string)
+# Это нужно только для dendrite.yaml
+echo "🔐 Кодирую пароль для строки подключения..."
+DB_PASS_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$DB_PASS")
+
 echo "🔑 Сгенерирован пароль для БД: $DB_PASS"
 echo "⚠️  ВАЖНО: Сохраните этот пароль! Он нужен для подключения извне."
 echo ""
 
-# 4. Обновление конфига Dendrite (Вставка пароля)
+# 4. Обновление конфига Dendrite (Вставка ЗАКОДИРОВАННОГО пароля)
 echo "📝 Обновляю конфиг Dendrite..."
-sed -i "s|<DB_PASSWORD>|$DB_PASS|g" manifests/config/dendrite.yaml
+sed -i "s|<DB_PASSWORD>|$DB_PASS_ENCODED|g" manifests/config/dendrite.yaml
 
 # 5. Установка k3s (если нет)
 if ! command -v k3s &> /dev/null; then
@@ -45,7 +50,7 @@ export PATH=$PATH:/usr/local/bin
 echo "📁 Создаю namespace messenger..."
 kubectl create namespace messenger --dry-run=client -o yaml | kubectl apply -f -
 
-# 8. Создание Kubernetes Secret
+# 8. Создание Kubernetes Secret (Вставляется ОБЫЧНЫЙ, не кодированный пароль)
 echo "🔐 Создаю секрет в Kubernetes..."
 kubectl create secret generic postgres-secret \
   --from-literal=POSTGRES_USER=matrix_user \
@@ -80,19 +85,17 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/a
 kubectl apply -f admin-user.yaml
 
 # 11. Применение всех манифестов приложения
-# ВАЖНО: Это может перезаписать ConfigMap на пустой/старый, если он есть в папке manifests
 echo "📦 Применяю манифесты приложений..."
 kubectl apply -f manifests/
 
 # 11.5. ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ConfigMap (В самом конце!)
-# Эта команда перезапишет любой ConfigMap, созданный на шаге 11, актуальным файлом с диска
 echo "🔥 Финальное обновление ConfigMap dendrite-config..."
 kubectl create configmap dendrite-config \
   --from-file=dendrite.yaml=manifests/config/dendrite.yaml \
   -n messenger \
   --dry-run=client -o yaml | kubectl apply -f -
 
-# 12. Перезапуск Dendrite для подтягивания конфига
+# 12. Перезапуск Dendrite
 echo "🔄 Перезапускаю Dendrite для применения конфигурации..."
 kubectl rollout restart deployment dendrite -n messenger
 
