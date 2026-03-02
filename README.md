@@ -41,7 +41,7 @@
 ## 🛠 Технологический стек
 
 *   **Orchestration:** [K3s](https://www.k3s.io/) — облегченный дистрибутив Kubernetes (идеален для VPS 2GB RAM).
-*   **Messenger:** [Dendrite](https://github.com/matrix-org/dendrite) —第二代 Matrix homeserver на Go (легче и быстрее Synapse).
+*   **Messenger:** [Dendrite](https://github.com/matrix-org/dendrite) — Matrix homeserver на Go (легче и быстрее Synapse).
 *   **Database:** PostgreSQL 15 (Alpine) — надежное хранилище данных.
 *   **Ingress:** Nginx Ingress Controller — маршрутизация трафика.
 *   **Security:** Cert-Manager + Let's Encrypt — автоматический выпуск SSL сертификатов.
@@ -101,8 +101,6 @@
 *   📊 **Мониторинг:** `https://prometheus.<ВАШ_ДОМЕН>`
 *   🎛️ **Админ-панель:** `https://dash.<ВАШ_ДОМЕН>`
 
-> **Примечание:** Админ-панель может потребовать входа через токен. Для доступа используйте `kubectl proxy` или порт-форвардинг для безопасности.
-
 ---
 
 ## 📦 Структура проекта
@@ -125,6 +123,42 @@
 
 ---
 
+## 🛠 Полезные команды (Администрирование)
+
+Так как регистрация в Dendrite по умолчанию отключена, а токены Dashboard имеют срок действия, используйте следующие команды для управления платформой.
+
+### Получение токена для Kubernetes Dashboard
+
+Токен, выданный при установке, имеет ограниченное время жизни. Чтобы войти в панель снова, выполните:
+
+```bash
+kubectl -n kubernetes-dashboard create token admin-user
+```
+Скопируйте полученную строку и вставьте её в поле "Token" на странице входа.
+
+### Добавление пользователя в Matrix (Dendrite)
+
+Чтобы создать нового пользователя (или восстановить доступ к админке), используйте CLI внутри контейнера:
+
+```bash
+# Создание администратора
+kubectl exec -n messenger deployment/dendrite -- \
+  /create-account \
+  --config /etc/dendrite/dendrite.yaml \
+  --username admin \
+  --password ваш_новый_пароль \
+  --admin
+
+# Создание обычного пользователя (без флага --admin)
+kubectl exec -n messenger deployment/dendrite -- \
+  /create-account \
+  --config /etc/dendrite/dendrite.yaml \
+  --username user \
+  --password ваш_пароль
+```
+
+---
+
 ## ⚠ Решенные проблемы (Troubleshooting)
 
 В процессе разработки были решены нетривиальные задачи, с которыми сталкиваются DevOps-инженеры:
@@ -133,4 +167,3 @@
 2.  **Resource Constraints:** Оптимизированы лимиты памяти и CPU для запуска "тяжелого" стека (Matrix + Postgres) на 2GB RAM без OOM Kill.
 3.  **Network Policies:** Настроен корректный Ingress для сервисов, требующих HTTPS бэкенд (Dashboard).
 4.  **DNS Propagation:** Учет времени обновления DNS при заказе SSL сертификатов.
-
