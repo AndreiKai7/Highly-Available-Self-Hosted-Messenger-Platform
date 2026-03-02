@@ -25,7 +25,7 @@ DB_PASS=$(openssl rand -base64 18 | head -c 20)
 # 3.5. КОДИРОВАНИЕ пароля для URL (чтобы символы / + @ не ломали connection string)
 # Это нужно только для dendrite.yaml
 echo "🔐 Кодирую пароль для строки подключения..."
-DB_PASS_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$DB_PASS")
+DB_PASS_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$DB_PASS")
 
 echo "🔑 Сгенерирован пароль для БД: $DB_PASS"
 echo "⚠️  ВАЖНО: Сохраните этот пароль! Он нужен для подключения извне."
