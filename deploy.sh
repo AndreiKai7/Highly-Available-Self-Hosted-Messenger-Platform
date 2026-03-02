@@ -88,7 +88,13 @@ kubectl apply -f admin-user.yaml
 echo "📦 Применяю манифесты приложений..."
 kubectl apply -f manifests/
 
-# 11.5. ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ConfigMap (В самом конце!)
+# 11.1. АВТОМАТИЗАЦИЯ: Ждем, пока Postgres будет полностью готов (Ready)
+# Это предотвратит падение Dendrite при старте
+echo "⏳ Ожидание готовности базы данных Postgres..."
+# Ждем готовности StatefulSet postgres (таймаут 5 минут)
+kubectl wait --for=condition=ready pod -l app=postgres -n messenger --timeout=300s
+
+# 11.5. ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ConfigMap
 echo "🔥 Финальное обновление ConfigMap dendrite-config..."
 kubectl create configmap dendrite-config \
   --from-file=dendrite.yaml=manifests/config/dendrite.yaml \
