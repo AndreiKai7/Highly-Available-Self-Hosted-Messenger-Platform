@@ -53,7 +53,13 @@ kubectl create secret generic postgres-secret \
   --from-literal=POSTGRES_DB=synapse \
   -n messenger --dry-run=client -o yaml | kubectl apply -f -
 
-# 9. Установка Ingress & Cert-Manager
+# 9. СОЗДАНИЕ CONFIGMAP ДЛЯ DENDRIBE
+echo "📝 Создаю ConfigMap для Dendrite..."
+kubectl create configmap dendrite-config \
+  --from-file=dendrite.yaml=manifests/config/dendrite.yaml \
+  -n messenger --dry-run=client -o yaml | kubectl apply -f -
+
+# 10. Установка Ingress & Cert-Manager
 echo "🌐 Настраиваю Ingress и Cert-Manager..."
 curl -Lo ingress-nginx.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/baremetal/deploy.yaml
 sed -i 's/registry.k8s.io/k8s.dockerproxy.com/g' ingress-nginx.yaml
@@ -74,12 +80,12 @@ rm cert-manager.yaml
 echo "⏳ Ждем запуска Cert-Manager (30 сек)..."
 sleep 30
 
-# 10. Установка Dashboard
+# 11. Установка Dashboard
 echo "📊 Устанавливаю Dashboard..."
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 kubectl apply -f admin-user.yaml
 
-# 11. Применение всех манифестов приложения
+# 12. Применение всех манифестов приложения
 echo "📦 Применяю манифесты приложений..."
 kubectl apply -f manifests/
 
