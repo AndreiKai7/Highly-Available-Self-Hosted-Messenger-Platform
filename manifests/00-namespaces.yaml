@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: messenger
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: website
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring

@@ -1,0 +1,99 @@
+# Ingress для Сайта
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: website-ingress
+  namespace: website
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts: [web.<YOUR_DOMAIN>]
+    secretName: web-tls
+  rules:
+  - host: web.<YOUR_DOMAIN>
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: website
+            port: { number: 80 }
+---
+# Ingress для Мессенджера
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dendrite-ingress
+  namespace: messenger
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+spec:
+  tls:
+  - hosts: [chat.<YOUR_DOMAIN>]
+    secretName: chat-tls
+  rules:
+  - host: chat.<YOUR_DOMAIN>
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dendrite
+            port: { number: 8008 }
+---
+# Ingress для Dashboard
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard-ingress
+  namespace: kubernetes-dashboard
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+spec:
+  tls:
+  - hosts: [dash.<YOUR_DOMAIN>]
+    secretName: dash-tls
+  rules:
+  - host: dash.<YOUR_DOMAIN>
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kubernetes-dashboard
+            port: { number: 443 }
+---
+# Ingress для Prometheus
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus-ingress
+  namespace: monitoring
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts: [prometheus.<YOUR_DOMAIN>]
+    secretName: prometheus-tls
+  rules:
+  - host: prometheus.<YOUR_DOMAIN>
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port: { number: 9090 }
