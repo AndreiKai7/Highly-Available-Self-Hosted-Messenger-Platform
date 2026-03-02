@@ -16,7 +16,7 @@ echo "⚙️  Начинаю настройку файлов..."
 
 # 2. Замена домена и email в файлах
 # Используем sed для замены плейсхолдеров прямо в файлах на диске
-sed -i "s/<YOUR_DOMAIN>/$DOMAIN/g" manifests/ingresses.yaml
+sed -i "s/<YOUR_DOMAIN>/$DOMAIN/g" manifests/05-ingresses.yaml
 sed -i "s/<YOUR_DOMAIN>/$DOMAIN/g" manifests/config/dendrite.yaml
 sed -i "s/your-email@example.com/$EMAIL/g" manifests/06-issuer.yaml
 
