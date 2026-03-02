@@ -41,7 +41,7 @@ fi
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 export PATH=$PATH:/usr/local/bin
 
-# 7. Создание Namespace (ОБЯЗАТЕЛЬНО ПЕРЕД СЕКРЕТОМ)
+# 7. Создание Namespace
 echo "📁 Создаю namespace messenger..."
 kubectl create namespace messenger --dry-run=client -o yaml | kubectl apply -f -
 
@@ -52,14 +52,6 @@ kubectl create secret generic postgres-secret \
   --from-literal=POSTGRES_PASSWORD="$DB_PASS" \
   --from-literal=POSTGRES_DB=synapse \
   -n messenger --dry-run=client -o yaml | kubectl apply -f -
-
-# 8.5. Создание/обновление ConfigMap из измененного файла
-# Это гарантирует, что в кластер попадет конфиг с вашим доменом и паролем
-echo "📦 Обновляю ConfigMap dendrite-config с актуальными настройками..."
-kubectl create configmap dendrite-config \
-  --from-file=dendrite.yaml=manifests/config/dendrite.yaml \
-  -n messenger \
-  --dry-run=client -o yaml | kubectl apply -f -
 
 # 9. Установка Ingress & Cert-Manager
 echo "🌐 Настраиваю Ingress и Cert-Manager..."
@@ -88,10 +80,21 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/a
 kubectl apply -f admin-user.yaml
 
 # 11. Применение всех манифестов приложения
+# ВАЖНО: Это может перезаписать ConfigMap на пустой/старый, если он есть в папке manifests
 echo "📦 Применяю манифесты приложений..."
-# Примечание: Если в папке manifests есть yaml файл для ConfigMap, он может перезаписать
-# изменения, сделанные на шаге 8.5. В таком случае удалите файл ConfigMap из папки manifests.
 kubectl apply -f manifests/
+
+# 11.5. ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ConfigMap (В самом конце!)
+# Эта команда перезапишет любой ConfigMap, созданный на шаге 11, актуальным файлом с диска
+echo "🔥 Финальное обновление ConfigMap dendrite-config..."
+kubectl create configmap dendrite-config \
+  --from-file=dendrite.yaml=manifests/config/dendrite.yaml \
+  -n messenger \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# 12. Перезапуск Dendrite для подтягивания конфига
+echo "🔄 Перезапускаю Dendrite для применения конфигурации..."
+kubectl rollout restart deployment dendrite -n messenger
 
 echo ""
 echo "✅ Установка завершена!"
