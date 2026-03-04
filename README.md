@@ -143,16 +143,16 @@ kubectl -n kubernetes-dashboard create token admin-user
 ```bash
 # Создание администратора
 kubectl exec -n messenger deployment/dendrite -- \
-  /create-account \
-  --config /etc/dendrite/dendrite.yaml \
+  /usr/bin/create-account \
+  --config /config/dendrite.yaml \
   --username admin \
   --password ваш_новый_пароль \
   --admin
 
 # Создание обычного пользователя (без флага --admin)
 kubectl exec -n messenger deployment/dendrite -- \
-  /create-account \
-  --config /etc/dendrite/dendrite.yaml \
+  /usr/bin/create-account \
+  --config /config/dendrite.yaml \
   --username user \
   --password ваш_пароль
 ```
